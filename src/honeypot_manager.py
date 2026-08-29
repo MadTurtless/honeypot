@@ -1,22 +1,21 @@
 import json
 import logging
 import os
-import pathlib
 from pathlib import Path
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-from src.embed_gui import EmbedGui
+from src.embed_gui_manager import EmbedGui
 
 logger = logging.getLogger("discord")
 
-def update_or_create_hp(ctx, channel: discord.TextChannel, punishment_type: app_commands.Choice[str],
+def update_or_create_hp(channel: discord.TextChannel, punishment_type: app_commands.Choice[str],
         punishment_duration: int = 168):
 
     settings = {
-        "channel": channel.id,
+        "channel": int(channel.id),
         "type": punishment_type.value,
         "duration": punishment_duration
     }
@@ -35,7 +34,7 @@ def update_or_create_hp(ctx, channel: discord.TextChannel, punishment_type: app_
 
     return embed
 
-class Commands(commands.Cog):
+class HoneypotManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -67,7 +66,7 @@ class Commands(commands.Cog):
             await ctx.send("A honeypot for this channel already exists!", ephemeral=True)
             return
 
-        embed = update_or_create_hp(ctx, channel, punishment_type, punishment_duration)
+        embed = update_or_create_hp(channel, punishment_type, punishment_duration)
 
         await ctx.send(embed=embed)
 
@@ -87,7 +86,7 @@ class Commands(commands.Cog):
         punishment_duration="How you want the honeypot to last in hours (default: 168h, 7d)."
     )
     async def edit(self, ctx, channel: discord.TextChannel, punishment_type: app_commands.Choice[str], punishment_duration: int=168):
-        embed = update_or_create_hp(ctx, channel, punishment_type, punishment_duration)
+        embed = update_or_create_hp(channel, punishment_type, punishment_duration)
 
         await ctx.send(embed=embed)
 
@@ -140,4 +139,4 @@ class Commands(commands.Cog):
         await ctx.send(embed=view.create_embed(), view=view)
 
 async def setup(bot):
-    await bot.add_cog(Commands(bot))
+    await bot.add_cog(HoneypotManager(bot))
