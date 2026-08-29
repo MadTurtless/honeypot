@@ -1,3 +1,5 @@
 .idea
 .env
 discord.log
+
+src/honeypot-settings
