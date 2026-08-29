@@ -1,8 +1,12 @@
 import json
+from json import JSONDecodeError
 
 from discord.ext import commands
 
-permitted_roles = json.load(open("src/utils/permitted_roles.json"))
+try:
+    permitted_roles = json.load(open("src/utils/permitted_roles.json"))
+except JSONDecodeError:
+    roles = []
 
 def check_perms():
     async def predicate(ctx):
