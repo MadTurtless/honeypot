@@ -55,8 +55,8 @@ class LogsManager(commands.Cog):
 
         embed = discord.Embed(
             title="Honeypot Logs Configuration",
-            description=f"**Channel**: {ctx.guild.get_channel(self.channel_id).jump_url}"
-                        f"\n**Ping Role**: {ctx.guild.get_role(self.role_id).mention}",
+            description=f"**Channel**: {channel.jump_url}"
+                        f"\n**Ping Role**: {ping_role.mention}",
             color=0xd8a31e
         )
 
@@ -72,7 +72,7 @@ class LogsManager(commands.Cog):
 
         embed = discord.Embed(
             title="Honeypot Log",
-            description=f"**Channel**: {message.guild.get_channel(self.channel_id).jump_url}\n"
+            description=f"**Channel**: {message.jump_url}\n"
                         f"**User**: {message.author.mention}\n"
                         f"**Action Taken**: {action}\n"
                         f"{duration_msg}",
