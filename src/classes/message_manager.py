@@ -80,11 +80,11 @@ class MessageManager(commands.Cog):
             for cached_msg in cached_entries:
                 try:
                     await cached_msg[0].delete()
-                    await self.log_manager.log(message, honeypot["type"], honeypot["duration"])
                 except discord.Forbidden:
                     pass
                 except discord.NotFound:
                     pass
+            await self.log_manager.log(message, honeypot["type"], honeypot["duration"])
         except discord.Forbidden:
             logger.error(f"Lacking permissions to moderate user {user_id}")
 
