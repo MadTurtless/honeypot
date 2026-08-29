@@ -3,3 +3,4 @@
 discord.log
 
 src/honeypot-settings
+src/utils/permitted_roles.json

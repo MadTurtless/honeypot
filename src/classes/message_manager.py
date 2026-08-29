@@ -8,6 +8,8 @@ from pathlib import Path
 import discord
 from discord.ext import commands
 
+from src.classes.logs_manager import LogsManager
+
 logger = logging.getLogger("discord")
 
 class MessageManager(commands.Cog):
@@ -17,6 +19,7 @@ class MessageManager(commands.Cog):
         self.CACHE_TTL = timedelta(seconds=10)
         self.honeypot_list = []
         self.get_honeypots()
+        self.log_manager = LogsManager(self.bot)
 
     def get_honeypots(self):
         h_list = []
@@ -45,19 +48,39 @@ class MessageManager(commands.Cog):
             if message.channel.id == h["channel"]:
                 honeypot = h
                 break
-            else:
-                return
+
+        if not honeypot:
+            return
 
         try:
-            await message.author.timeout(
-                timedelta(hours=honeypot["duration"]),
-                reason=f"Honeypot triggered: sent a message in {message.guild.get_channel(honeypot['channel']).jump_url}"
-                )
+            reason_msg = f"# You triggered a honeypot in ***{message.guild.name}!***\n\n**Action taken:** "
+            footer = "\n-# Please contact a moderator if this was a mistake."
+
+            match honeypot["type"]:
+                case "mute":
+                    await message.author.timeout(
+                        timedelta(hours=honeypot["duration"]),
+                        reason=reason_msg
+                        )
+                    await message.author.send(reason_msg + honeypot["type"] + footer)
+                case "kick":
+                    await message.author.send(reason_msg + honeypot["type"] + footer)
+                    await message.author.kick(reason=reason_msg)
+
+                    honeypot["duration"] = "N/A"
+                case "ban":
+                    await message.author.send(reason_msg + honeypot["type"] + footer)
+                    await message.author.ban(reason=reason_msg)
+
+                    honeypot["duration"] = "N/A"
+                case _:
+                    pass
 
             cached_entries = self.message_cache.pop(user_id, [])
             for cached_msg in cached_entries:
                 try:
                     await cached_msg[0].delete()
+                    await self.log_manager.log(message, honeypot["type"], honeypot["duration"])
                 except discord.Forbidden:
                     pass
                 except discord.NotFound:

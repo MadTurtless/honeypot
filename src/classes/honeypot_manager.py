@@ -7,7 +7,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from src.embed_gui_manager import EmbedGui
+from src.utils.embed_gui_manager import EmbedGui
+from src.utils.helper import check_perms
 
 logger = logging.getLogger("discord")
 
@@ -27,7 +28,7 @@ def update_or_create_hp(channel: discord.TextChannel, punishment_type: app_comma
     embed = discord.Embed(
         title="Honeypot Created",
         description=f"**Channel:** {channel.jump_url}"
-                    f"\n**Punishment:** {punishment_type.name}"
+                    f"\n**Punishment:** {punishment_type.value}"
                     f"\n**Duration:** {punishment_duration} hours",
         color=0xd8a31e
     )
@@ -38,17 +39,14 @@ class HoneypotManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command()
-    async def ping(self, ctx):
-        await ctx.send(f"Pong! {round(self.bot.latency * 1000)}ms")
-
-    @commands.hybrid_group("honeypot")
+    @commands.hybrid_group()
     async def honeypot(self, ctx):
         return
 
     @honeypot.command(
         description="Add a honeypot to your server."
     )
+    @check_perms()
     @app_commands.choices(
         punishment_type=[
             app_commands.Choice(name="Mute", value="mute"),
@@ -73,6 +71,7 @@ class HoneypotManager(commands.Cog):
     @honeypot.command(
         description="Edit an existing honeypot."
     )
+    @check_perms()
     @app_commands.choices(
         punishment_type=[
             app_commands.Choice(name="Mute", value="mute"),
@@ -93,6 +92,7 @@ class HoneypotManager(commands.Cog):
     @honeypot.command(
         description="Remove a honeypot from your server.",
     )
+    @check_perms()
     @app_commands.describe(
         channel="The channel you'd like to remove the honeypot from.",
     )
@@ -107,6 +107,7 @@ class HoneypotManager(commands.Cog):
     @honeypot.command(
         description="Get the channel's honeypot settings."
     )
+    @check_perms()
     @app_commands.describe(
         channel="The channel you'd like to get the honeypot from.",
     )
@@ -117,10 +118,10 @@ class HoneypotManager(commands.Cog):
 
         settings = json.load(open(Path(f"src/honeypot-settings/{channel.id}.json")))
         embed = discord.Embed(
-            title="Honeypot Created",
+            title="Honeypot Info",
             description=f"**Channel:** {channel.jump_url}"
-                            f"\n**Punishment:** {settings.punishment_type.name}"
-                            f"\n**Duration:** {settings.punishment_duration} hours",
+                            f"\n**Punishment:** {settings['type']}"
+                            f"\n**Duration:** {settings['duration']}h",
             color=0xd8a31e
         )
 
@@ -129,6 +130,7 @@ class HoneypotManager(commands.Cog):
     @honeypot.command(
         description="Get a list of all honeypots."
     )
+    @check_perms()
     async def list(self, ctx):
         honeypots = []
 
