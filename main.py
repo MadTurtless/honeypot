@@ -63,7 +63,7 @@ async def main():
     It makes sure to add all cogs and then starts it.
     :return:
     """
-    extensions = {}
+    extensions = {"src.honeypot-manager"}
 
     async with bot:
         for e in extensions:
