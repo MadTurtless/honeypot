@@ -3,10 +3,9 @@ from json import JSONDecodeError
 
 from discord.ext import commands
 
-try:
-    permitted_roles = json.load(open("src/utils/permitted_roles.json"))
-except JSONDecodeError:
-    roles = []
+from src.classes.database_manager import DatabaseManager
+
+db = DatabaseManager()
 
 def check_perms():
     async def predicate(ctx):
@@ -16,8 +15,10 @@ def check_perms():
         if ctx.author.guild_permissions.administrator:
             return True
 
+        permitted_role_id = db.get_perms(ctx.guild.id)[1]
+
         for role in ctx.author.roles:
-            if role.id in permitted_roles:
+            if role.id == permitted_role_id:
                 return True
 
         await ctx.send("You don't have enough permissions to run this command.", ephemeral=True)

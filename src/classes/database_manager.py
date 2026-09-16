@@ -70,11 +70,11 @@ class DatabaseManager:
 
     def get_perms(self, guild_id: int):
         query = "SELECT * FROM perms WHERE guild_id = ?"
-        return self._execute(query, (guild_id,), fetch="all")
+        return self._execute(query, (guild_id,), fetch="one")
 
     def get_logs(self, guild_id: int):
         query = "SELECT * FROM logs WHERE guild_id = ?"
-        return self._execute(query, (guild_id,), fetch="all")
+        return self._execute(query, (guild_id,), fetch="one")
 
     def add_channel(self, guild_id: int, channel_id: int, punishment: str, duration: int):
         query = "INSERT INTO hp_channels(guild_id, channel_id, punishment, duration) VALUES (?, ?, ?, ?)"

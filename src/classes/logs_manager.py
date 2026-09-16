@@ -7,6 +7,7 @@ from discord.ext.commands import hybrid_group
 import dotenv
 from dotenv import load_dotenv
 
+from src.classes.database_manager import DatabaseManager
 from src.utils.helper import check_perms
 
 load_dotenv()
@@ -14,12 +15,9 @@ load_dotenv()
 class LogsManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.db = DatabaseManager()
         self.channel_id = None
-        if os.getenv("LOGS_CHANNEL_ID"):
-            self.channel_id = int(os.getenv("LOGS_CHANNEL_ID"))
         self.role_id = None
-        if os.getenv("LOGS_ROLE_ID"):
-            self.role_id = int(os.getenv("LOGS_ROLE_ID"))
 
     @hybrid_group()
     async def logs(self, ctx):
@@ -48,10 +46,9 @@ class LogsManager(commands.Cog):
     )
     @check_perms()
     async def setup(self, ctx, channel: discord.TextChannel, ping_role: discord.Role):
-        dotenv.set_key(".env", "LOGS_CHANNEL_ID", str(channel.id))
-        self.channel_id = int(channel.id)
-        dotenv.set_key(".env", "LOGS_ROLE_ID", str(ping_role.id))
-        self.role_id = int(ping_role.id)
+        self.db.configure_logs(ctx.guild.id, channel.id, ping_role.id)
+        self.channel_id = channel.id
+        self.role_id = ping_role.id
 
         embed = discord.Embed(
             title="Honeypot Logs Configuration",

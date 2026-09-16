@@ -6,13 +6,14 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import hybrid_group
 
+from src.classes.database_manager import DatabaseManager
 from src.utils.helper import check_perms
 
 
 class PermissionsManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.roles_path = "src/utils/permitted_roles.json"
+        self.db = DatabaseManager()
 
     @hybrid_group()
     async def perms(self, ctx):
@@ -22,50 +23,23 @@ class PermissionsManager(commands.Cog):
         description="Add a role to the list of roles that can run Honeypot commands.",
     )
     @check_perms()
-    async def add(self, ctx, role: discord.Role):
-        try:
-            roles = json.load(open(self.roles_path))
-            roles.append(role.id)
-        except JSONDecodeError:
-            roles = [role.id]
+    async def setup(self, ctx, role: discord.Role):
+        self.db.configure_perms(ctx.guild.id, role.id)
 
-        json.dump(roles, open(self.roles_path, "w"), indent=4)
-
-        await ctx.send(f"Successfully added {role.name} to permitted roles.", ephemeral=True)
-
-    @perms.command(
-        description="Remove a role from the list of roles that can run Honeypot commands.",
-    )
-    @check_perms()
-    async def remove(self, ctx, role: discord.Role):
-        try:
-            roles = json.load(open(self.roles_path))
-            roles.remove(role.id)
-        except JSONDecodeError:
-            roles = [role.id]
-
-        json.dump(roles, open(self.roles_path, "w"), indent=4)
-
-        await ctx.send(f"Successfully removed {role.name} from permitted roles.", ephemeral=True)
+        await ctx.send(f"Successfully added {role.mention} to permitted roles.", ephemeral=True)
 
     @perms.command(
         description="View the list of roles that can run Honeypot commands.",
     )
     @check_perms()
-    async def list(self, ctx):
-        try:
-            roles = json.load(open("src/utils/permitted_roles.json"))
-        except JSONDecodeError:
-            roles = []
+    async def info(self, ctx):
+        role = self.db.get_perms(ctx.guild.id)
 
-        embed = discord.Embed(
-            title="Permitted Roles List",
-        )
+        if role is None:
+            await ctx.send("No role was added to honeypot permissions. Please run `/perms setup` first!", ephemeral=True)
+            return
 
-        for i  in range(len(roles)):
-            embed.add_field(name="", value=f"{i + 1}: {ctx.guild.get_role(roles[i]).mention}", inline=False)
-
-        await ctx.send(embed=embed)
+        await ctx.send(f"Permission role: {ctx.guild.get_role(role[1]).mention}", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(PermissionsManager(bot))
