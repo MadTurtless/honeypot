@@ -8,6 +8,8 @@ from discord.ext import commands
 
 from dotenv import load_dotenv
 
+from src.classes.database_manager import DatabaseManager
+
 old_factory = logging.getLogRecordFactory()
 
 def record_factory(*args, **kwargs):
