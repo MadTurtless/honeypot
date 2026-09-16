@@ -7,37 +7,16 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from src.classes.database_manager import DatabaseManager
 from src.utils.embed_gui_manager import EmbedGui
 from src.utils.helper import check_perms
 
 logger = logging.getLogger("discord")
 
-def update_or_create_hp(channel: discord.TextChannel, punishment_type: app_commands.Choice[str],
-        punishment_duration: int = 168):
-
-    settings = {
-        "channel": int(channel.id),
-        "type": punishment_type.value,
-        "duration": punishment_duration
-    }
-
-    with open(Path(f"src/honeypot-settings/{channel.id}.json"), "w") as f:
-        json.dump(settings, f, indent=4)
-    f.close()
-
-    embed = discord.Embed(
-        title="Honeypot Created",
-        description=f"**Channel:** {channel.jump_url}"
-                    f"\n**Punishment:** {punishment_type.value}"
-                    f"\n**Duration:** {punishment_duration} hours",
-        color=0xd8a31e
-    )
-
-    return embed
-
 class HoneypotManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.db = DatabaseManager()
 
     @commands.hybrid_group()
     async def honeypot(self, ctx):
@@ -60,11 +39,19 @@ class HoneypotManager(commands.Cog):
         punishment_duration="How you want the honeypot to last in hours (default: 168h, 7d)."
     )
     async def create(self, ctx, channel: discord.TextChannel, punishment_type: app_commands.Choice[str], punishment_duration: int=168):
-        if os.path.isfile(f"src/honeypot-settings/{channel.id}.json"):
+        if not self.db.get_channels(ctx.guild.id) == []:
             await ctx.send("A honeypot for this channel already exists!", ephemeral=True)
             return
 
-        embed = update_or_create_hp(channel, punishment_type, punishment_duration)
+        self.db.add_channel(ctx.guild.id, channel.id, punishment_type.value, punishment_duration)
+
+        embed = discord.Embed(
+            title="Honeypot Created",
+            description=f"**Channel:** {channel.jump_url}"
+                        f"\n**Punishment:** {punishment_type.value}"
+                        f"\n**Duration:** {punishment_duration} hours",
+            color=0xd8a31e
+        )
 
         await ctx.send(embed=embed)
 
@@ -85,7 +72,15 @@ class HoneypotManager(commands.Cog):
         punishment_duration="How you want the honeypot to last in hours (default: 168h, 7d)."
     )
     async def edit(self, ctx, channel: discord.TextChannel, punishment_type: app_commands.Choice[str], punishment_duration: int=168):
-        embed = update_or_create_hp(channel, punishment_type, punishment_duration)
+        self.db.edit_channel(ctx.guild.id, channel.id, punishment_type.value, punishment_duration)
+
+        embed = discord.Embed(
+            title="Honeypot Created",
+            description=f"**Channel:** {channel.jump_url}"
+                        f"\n**Punishment:** {punishment_type.value}"
+                        f"\n**Duration:** {punishment_duration} hours",
+            color=0xd8a31e
+        )
 
         await ctx.send(embed=embed)
 
@@ -97,12 +92,12 @@ class HoneypotManager(commands.Cog):
         channel="The channel you'd like to remove the honeypot from.",
     )
     async def remove(self, ctx, channel: discord.TextChannel):
-        if not os.path.exists(Path(f"src/honeypot-settings/{channel.id}.json")):
+        if not self.db.get_channels(ctx.guild.id):
             await ctx.send("Channel isn't a honeypot!", ephemeral=True)
             return
 
-        os.remove(Path(f"src/honeypot-settings/{channel.id}.json"))
-        await ctx.send(f"Removed honeypot from #{channel.jump_url}")
+        self.db.remove_channel(ctx.guild.id, channel.id)
+        await ctx.send(f"Removed honeypot from {channel.jump_url}")
 
     @honeypot.command(
         description="Get the channel's honeypot settings."
@@ -112,16 +107,18 @@ class HoneypotManager(commands.Cog):
         channel="The channel you'd like to get the honeypot from.",
     )
     async def info(self, ctx, channel: discord.TextChannel):
-        if not os.path.exists(Path(f"src/honeypot-settings/{channel.id}.json")):
-            await ctx.send("Channel is not a honeypot!", ephemeral=True)
+        if not self.db.get_channels(ctx.guild.id):
+            await ctx.send("Channel isn't a honeypot!", ephemeral=True)
             return
 
-        settings = json.load(open(Path(f"src/honeypot-settings/{channel.id}.json")))
+        settings = self.db.get_channel(ctx.guild.id, channel.id)
+        print(settings)
+
         embed = discord.Embed(
             title="Honeypot Info",
             description=f"**Channel:** {channel.jump_url}"
-                            f"\n**Punishment:** {settings['type']}"
-                            f"\n**Duration:** {settings['duration']}h",
+                            f"\n**Punishment:** {settings[3]}"
+                            f"\n**Duration:** {settings[4]}h",
             color=0xd8a31e
         )
 
@@ -132,10 +129,7 @@ class HoneypotManager(commands.Cog):
     )
     @check_perms()
     async def list(self, ctx):
-        honeypots = []
-
-        for h in os.listdir(Path("src/honeypot-settings/")):
-            honeypots.append(json.load(open(Path(f"src/honeypot-settings/{h}"), "r")))
+        honeypots = self.db.get_channels(ctx.guild.id)
 
         view = EmbedGui(honeypots, ctx)
         await ctx.send(embed=view.create_embed(), view=view)

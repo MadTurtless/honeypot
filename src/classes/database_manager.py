@@ -36,7 +36,7 @@ class DatabaseManager:
             id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
             guild_id INTEGER NOT NULL,
             channel_id INTEGER NOT NULL,
-            punishment INTEGER NOT NULL,
+            punishment TEXT NOT NULL,
             duration INTEGER NOT NULL
         )
         """
@@ -64,6 +64,10 @@ class DatabaseManager:
         query = "SELECT * FROM hp_channels WHERE guild_id = ?"
         return self._execute(query, (guild_id,), fetch="all")
 
+    def get_channel(self, guild_id: int, channel_id: int):
+        query = "SELECT * FROM hp_channels WHERE guild_id = ? and channel_id = ?"
+        return self._execute(query, (guild_id, channel_id), fetch="one")
+
     def get_perms(self, guild_id: int):
         query = "SELECT * FROM perms WHERE guild_id = ?"
         return self._execute(query, (guild_id,), fetch="all")
@@ -72,17 +76,17 @@ class DatabaseManager:
         query = "SELECT * FROM logs WHERE guild_id = ?"
         return self._execute(query, (guild_id,), fetch="all")
 
-    def add_channel(self, guild_id: int, channel_id: int, punishment: int, duration: int):
+    def add_channel(self, guild_id: int, channel_id: int, punishment: str, duration: int):
         query = "INSERT INTO hp_channels(guild_id, channel_id, punishment, duration) VALUES (?, ?, ?, ?)"
         self._execute(query, (guild_id, channel_id, punishment, duration))
+
+    def edit_channel(self, guild_id: int, channel_id: int, punishment: str, duration: int):
+        query = "UPDATE hp_channels SET punishment = ?, duration = ? WHERE guild_id = ? and channel_id = ?"
+        self._execute(query, (punishment, duration, guild_id, channel_id))
 
     def remove_channel(self, guild_id: int, channel_id: int):
         query = "DELETE FROM hp_channels WHERE guild_id = ? and channel_id = ?"
         self._execute(query, (guild_id, channel_id))
-
-    def edit_channel(self, guild_id: int, channel_id: int, punishment: int, duration: int):
-        query = "UPDATE hp_channels SET punishment = ?, duration = ? WHERE guild_id = ? and channel_id = ?"
-        self._execute(query, (punishment, duration, guild_id, channel_id))
 
     def configure_perms(self, guild_id: int, role_id: int):
         select_query = "SELECT * FROM perms WHERE guild_id = ?"

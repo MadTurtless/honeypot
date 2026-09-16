@@ -17,9 +17,9 @@ class EmbedGui(discord.ui.View):
 
         embed = discord.Embed(
             title="Honeypot Details",
-            description=f"**Channel:** {self.ctx.guild.get_channel(data['channel']).jump_url}"
-                        f"\n**Punishment:** {data['type']}"
-                        f"\n**Duration:** {data['duration']} hours",
+            description=f"**Channel:** {self.ctx.guild.get_channel(data[2]).jump_url}"
+                        f"\n**Punishment:** {data[3]}"
+                        f"\n**Duration:** {data[4]} hours",
             color=0xd8a31e
         )
 
