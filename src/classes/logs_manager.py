@@ -47,8 +47,7 @@ class LogsManager(commands.Cog):
     @check_perms()
     async def setup(self, ctx, channel: discord.TextChannel, ping_role: discord.Role):
         self.db.configure_logs(ctx.guild.id, channel.id, ping_role.id)
-        self.channel_id = channel.id
-        self.role_id = ping_role.id
+        self.channel_id, self.role_id = self.db.get_logs(ctx.guild.id)
 
         embed = discord.Embed(
             title="Honeypot Logs Configuration",
