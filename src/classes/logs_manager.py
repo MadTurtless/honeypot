@@ -16,8 +16,6 @@ class LogsManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.db = DatabaseManager()
-        self.channel_id = None
-        self.role_id = None
 
     @hybrid_group()
     async def logs(self, ctx):
@@ -28,14 +26,15 @@ class LogsManager(commands.Cog):
     )
     @check_perms()
     async def info(self, ctx):
-        if not self.channel_id:
+        channel_id = self.db.get_logs(ctx.guild.id)[1]
+        if not channel_id:
             await ctx.send("Logs haven't been configured yet! Run `/logs setup` first.", ephemeral=True)
             return
 
         embed = discord.Embed(
             title="Honeypot Logs Configuration",
-            description=f"**Channel**: {ctx.guild.get_channel(self.channel_id).jump_url}"
-                        f"\n**Ping Role**: {ctx.guild.get_role(self.role_id).mention}",
+            description=f"**Channel**: {ctx.guild.get_channel(channel_id).jump_url}"
+                        f"\n**Ping Role**: {ctx.guild.get_role(role_id).mention}",
             color=0xd8a31e
         )
 
@@ -47,7 +46,6 @@ class LogsManager(commands.Cog):
     @check_perms()
     async def setup(self, ctx, channel: discord.TextChannel, ping_role: discord.Role):
         self.db.configure_logs(ctx.guild.id, channel.id, ping_role.id)
-        self.channel_id, self.role_id = self.db.get_logs(ctx.guild.id)
 
         embed = discord.Embed(
             title="Honeypot Logs Configuration",
@@ -60,6 +58,8 @@ class LogsManager(commands.Cog):
 
     async def log(self, message, action, duration):
         guild = message.guild
+        channel_id = self.db.get_logs(guild.id)[1]
+        role_id = self.db.get_logs(guild.id)[2]
 
         duration_msg = ""
 
@@ -75,7 +75,7 @@ class LogsManager(commands.Cog):
             color=0xd8a31e
         )
 
-        await guild.get_channel(self.channel_id).send(guild.get_role(self.role_id).mention, embed=embed)
+        await guild.get_channel(channel_id).send(guild.get_role(role_id).mention, embed=embed)
 
 
 async def setup(bot):

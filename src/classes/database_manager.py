@@ -106,4 +106,4 @@ class DatabaseManager:
             self._execute(query, (guild_id, channel_id, role_id))
         else:
             query = "UPDATE logs SET channel_id = ?, role_id = ? WHERE guild_id = ?"
-            self._execute(query, (role_id, channel_id, guild_id))
+            self._execute(query, (channel_id, role_id, guild_id))
