@@ -27,6 +27,7 @@ class LogsManager(commands.Cog):
     @check_perms()
     async def info(self, ctx):
         channel_id = self.db.get_logs(ctx.guild.id)[1]
+        role_id = self.db.get_logs(ctx.guild.id)[2]
         if not channel_id:
             await ctx.send("Logs haven't been configured yet! Run `/logs setup` first.", ephemeral=True)
             return
